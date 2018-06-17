@@ -6,10 +6,14 @@ class User < ApplicationRecord
                     uniqueness: { case_sensitive: false }
   has_secure_password
   has_many :microposts
+  
   has_many :relationships
   has_many :followings, through: :relationships, source: :follow
   has_many :reverse_of_relationship, class_name: 'Relationship', foreign_key: 'follow_id'
   has_many :followers, through: :reverse_of_relationship, source: :user
+  
+  has_many :favorites
+  has_many :fav_posts, through: :favorites, source: :micropost
   
   def follow(other_user)
     unless self == other_user
@@ -30,4 +34,17 @@ class User < ApplicationRecord
     Micropost.where(user_id: self.following_ids + [self.id])
   end
   
+  def add_likes(micropost)
+    self.favorites.find_or_create_by(micropost_id: micropost.id)
+    
+  end
+  
+  def rem_likes(micropost)
+    favorite = self.favorites.find_by(micropost_id: micropost.id)
+    favorite.destroy if favorite
+  end 
+  
+  def now_likes?(micropost)
+    self.fav_posts.include?(micropost)
+  end
 end
